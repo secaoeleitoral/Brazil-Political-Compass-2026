@@ -117,7 +117,7 @@
 
     function getInitialTheme() {
         try {
-            const stored = window.localStorage.getItem('secao-eleitoral-theme');
+            const stored = window.localStorage.getItem('theme');
             if (stored === 'light' || stored === 'dark') {
                 return stored;
             }
@@ -2726,13 +2726,13 @@
         document.documentElement.dataset.theme = state.theme;
 
         try {
-            window.localStorage.setItem('secao-eleitoral-theme', state.theme);
+            window.localStorage.setItem('theme', state.theme);
         } catch (error) {
             // Ignore persistence errors.
         }
 
         if (dom.themeToggle) {
-            dom.themeToggle.innerHTML = state.theme === 'dark' ? '&#9728;' : '&#9790;';
+            dom.themeToggle.innerHTML = state.theme === 'dark' ? '🌙' : '☀️';
             dom.themeToggle.title = state.theme === 'dark'
                 ? 'Alternar para tema claro'
                 : 'Alternar para tema escuro';
@@ -2865,5 +2865,10 @@
     } else {
         init();
     }
+
+    window.setTheme = function(theme) {
+        state.theme = theme;
+        applyTheme();
+    };
 })();
 

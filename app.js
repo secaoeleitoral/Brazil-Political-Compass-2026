@@ -738,6 +738,11 @@ function aplicarTema() {
         }).addTo(window.plebiscitoMapInstance);
         document.getElementById('mapPlebiscito').style.background = dark ? '#0e0e0e' : '#e5e5e5';
     }
+
+    var rmspFrame = document.getElementById('rmsp-iframe');
+    if (rmspFrame && rmspFrame.contentWindow && rmspFrame.contentWindow.setTheme) {
+        rmspFrame.contentWindow.setTheme(dark ? 'dark' : 'light');
+    }
 }
 
 function startCountdown() {
