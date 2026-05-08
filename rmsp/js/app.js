@@ -41,6 +41,8 @@
         selectedFeatureId: null,
         selectedFeature: null,
         selectedMarker: null,
+        ctrlSelectedIds: new Set(),
+        ctrlSelectedMarkers: new Set(),
         candidatesExpanded: false,
         vencidosCandidateCode: null,
         theme: getInitialTheme(),
@@ -57,6 +59,7 @@
         bairroClear: document.getElementById('bairroClear'),
         bairroDropdown: document.getElementById('bairroDropdown'),
         btnSomarBairro: document.getElementById('btnSomarBairro'),
+        btnSomarMunicipio: document.getElementById('btnSomarMunicipio'),
         loadingText: document.querySelector('.loading-text'),
         panelLeft: document.getElementById('panelLeft'),
         panelRight: document.getElementById('panelRight'),
@@ -130,7 +133,7 @@
     }
 
     function persistColorOverrides() {
-        // Removido: cores customizadas agora resetam no reload da pÃ¡gina.
+        // Removido: cores customizadas agora resetam no reload da página.
     }
 
     function applyColorOverridesFromState() {
@@ -179,7 +182,7 @@
             onAdd() {
                 const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control box-select-btn');
                 btn.id = 'btnBoxSelect';
-                btn.title = 'Selecionar locais por arrasto';
+                btn.title = 'Arraste para selecionar locais';
                 btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="12" height="12" rx="1" stroke-dasharray="3 2"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>`;
                 L.DomEvent.disableClickPropagation(btn);
                 L.DomEvent.on(btn, 'click', () => {
@@ -271,40 +274,38 @@
     function aggregateInBounds(bounds) {
         if (!state.markersLayer) return;
 
-        const features = [];
+        const markers = [];
         state.markersLayer.eachLayer((marker) => {
             if (!marker._featureData) return;
             const [lon, lat] = marker._featureData.geometry.coordinates;
             if (bounds.contains([lat, lon])) {
-                features.push(marker._featureData);
+                markers.push(marker);
             }
         });
 
-        if (!features.length) return;
+        if (!markers.length) return;
 
-        const cargoData = getCandidates()[state.currentCargo] || { candidates: {} };
-        const aggregated = {};
-
-        features.forEach((feature) => {
-            const votes = feature.properties[state.currentCargo] || {};
-            for (const code in votes) {
-                aggregated[code] = (aggregated[code] || 0) + (Number(votes[code]) || 0);
-            }
+        // Agregar usando o _summary de cada marker, que já tem nomes corretos por município
+        const aggregated = {}; // code -> { code, votos, info, isInvalid }
+        markers.forEach((marker) => {
+            (marker._summary?.entries || []).forEach((entry) => {
+                if (!aggregated[entry.code]) {
+                    aggregated[entry.code] = { code: entry.code, votos: 0, info: { ...entry.info }, isInvalid: entry.isInvalid };
+                }
+                aggregated[entry.code].votos += entry.votos;
+            });
         });
 
-        const entries = Object.entries(aggregated)
-            .map(([code, total]) => {
-                const info = cargoData.candidates[code] || { nome: `Candidato ${code}`, partido: '', cor: '#737373' };
-                const isInvalid = INVALID_CODES.has(code);
-                return { code, votos: total, info: { ...info }, isInvalid };
-            })
+        const features = markers.map((m) => m._featureData);
+
+        const entries = Object.values(aggregated)
             .sort((a, b) => b.votos - a.votos);
 
         const validEntries   = entries.filter((e) => !e.isInvalid);
         const invalidEntries = entries.filter((e) => e.isInvalid);
         const validTotal     = validEntries.reduce((s, e) => s + e.votos, 0);
         const invalidTotal   = invalidEntries.reduce((s, e) => s + e.votos, 0);
-        const total          = validTotal + invalidTotal;
+        const total          = validTotal;
         const winner         = validEntries[0] || null;
         const runnerUp       = validEntries[1] || null;
         const winnerPct      = winner && validTotal > 0 ? (winner.votos / validTotal) * 100 : 0;
@@ -317,11 +318,12 @@
 
         const summary    = { entries, validEntries, invalidEntries, validTotal, invalidTotal, total, winner, runnerUp, winnerPct, marginVotes, marginPct };
         const props      = { municipio: dominantMun, distrito: '' };
-        const cargoLabel = getCandidates()[state.currentCargo]?.label || 'Cargo';
+        const cargoLabel = getCandidates()[state.currentCargo]?.label
+                        || (entries[0] ? `${state.currentCargo}` : 'Cargo');
 
         if (dom.placeholder) dom.placeholder.style.display = 'none';
         if (dom.localInfo)   dom.localInfo.style.display = 'block';
-        if (dom.localName)   dom.localName.textContent = `Seleção — ${features.length} local${features.length !== 1 ? 'is' : ''}`;
+        if (dom.localName)   dom.localName.textContent = `Seleção — ${features.length} ${features.length === 1 ? 'local' : 'locais'}`;
         if (dom.localMeta)   dom.localMeta.innerHTML = [
             `Municípios: ${Object.keys(munCount).map(titleCase).join(', ')}`,
             `Soma de ${features.length} locais de votação`
@@ -396,7 +398,7 @@
             if (dom.loadingText) {
                 dom.loadingText.textContent =
                     window.location.protocol === 'file:'
-                        ? 'Nao foi possivel carregar os dados via file://. Rode um servidor local para abrir o projeto.'
+                        ? 'Não foi possível carregar os dados via file://. Rode um servidor local para abrir o projeto.'
                         : 'Erro ao carregar data/stations.geojson. Verifique o arquivo e tente novamente.';
             }
         }
@@ -424,7 +426,7 @@
 
         const allOption = document.createElement('option');
         allOption.value = '';
-        allOption.textContent = `Todos os municipios (${municipios.length})`;
+        allOption.textContent = `Todos os municípios (${municipios.length})`;
         dom.selectMunicipio.appendChild(allOption);
 
         municipios.forEach((municipio) => {
@@ -665,13 +667,19 @@
                 return;
             }
 
-            if (state.vizMode === 'desempenho' && state.perfCandidateCode && (state.perfFilterPct > 0 || state.perfFilterMaxPct < 100)) {
-                const entry = summary.entries.find((e) => e.code === state.perfCandidateCode);
-                const candidateVotes = entry ? entry.votos : 0;
-                const pct = summary.validTotal > 0 ? (candidateVotes / summary.validTotal) * 100 : 0;
-                
-                if (pct < state.perfFilterPct || pct > state.perfFilterMaxPct) {
-                    return;
+            if (state.vizMode === 'desempenho' && state.perfCandidateCode) {
+                const _dataMin = state._perfDataMin ?? parseFloat(dom.perfFilterSlider?.min || 0);
+                const _dataMax = state._perfDataMax ?? parseFloat(dom.perfFilterSliderMax?.max || 100);
+                const _minFiltered = state.perfFilterPct > _dataMin + 0.001;
+                const _maxFiltered = state.perfFilterMaxPct < _dataMax - 0.001;
+                if (_minFiltered || _maxFiltered) {
+                    const entry = summary.entries.find((e) => e.code === state.perfCandidateCode);
+                    const candidateVotes = entry ? entry.votos : 0;
+                    const pct = summary.validTotal > 0 ? (candidateVotes / summary.validTotal) * 100 : 0;
+                    // Tolerância de 0.005 = meia casa decimal de exibição (2 casas)
+                    if (pct < state.perfFilterPct - 0.005 || pct > state.perfFilterMaxPct + 0.005) {
+                        return;
+                    }
                 }
             }
 
@@ -697,8 +705,13 @@
                 offset: [0, -8]
             });
 
-            marker.on('click', () => {
-                selectFeature(feature, marker, { resetExpansion: true });
+            marker.on('click', (e) => {
+                if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) {
+                    toggleCtrlMarker(marker);
+                } else {
+                    clearCtrlSelection();
+                    selectFeature(feature, marker, { resetExpansion: true });
+                }
             });
 
             markers.push(marker);
@@ -706,6 +719,7 @@
 
         state.markersLayer = L.layerGroup(markers).addTo(state.map);
         restoreSelection();
+        restoreCtrlSelection();
 
         if (state.vizMode === 'desempenho') {
             updatePerformanceView();
@@ -716,18 +730,31 @@
         }
     }
 
-    function buildMarkerStyle(summary, isSelected) {
+    function buildMarkerStyle(summary, isSelected, isCtrlSelected = false) {
         const outlineColor = state.theme === 'light'
             ? 'rgba(23, 23, 23, 0.35)'
             : 'rgba(255, 255, 255, 0.35)';
+
+        let color, opacity, weight;
+        if (isSelected) {
+            color = getCssVar('--accent');
+            opacity = 1;
+            weight = 2.2;
+        } else if (isCtrlSelected) {
+            color = '#f59e0b';
+            opacity = 1;
+            weight = 2.5;
+        } else {
+            color = outlineColor;
+            opacity = 0.9;
+            weight = 0.8;
+        }
 
         return {
             radius: getMarkerRadius(state.map ? state.map.getZoom() : DEFAULT_ZOOM),
             fillColor: getMarkerFillColor(summary),
             fillOpacity: getMarkerOpacity(summary.winnerPct),
-            color: isSelected ? getCssVar('--accent') : outlineColor,
-            opacity: isSelected ? 1 : 0.9,
-            weight: isSelected ? 2.2 : 0.8
+            color, opacity, weight
         };
     }
 
@@ -888,16 +915,12 @@
                                      : null;
                 if (MUNICIPIOS_ANO) {
                     const mun = feature.properties.municipio;
-                    if (mun && MUNICIPIOS_ANO[mun]) {
-                        if (MUNICIPIOS_ANO[mun][code]) {
-                            info = {
-                                ...info,
-                                nome: MUNICIPIOS_ANO[mun][code].nome,
-                                partido: MUNICIPIOS_ANO[mun][code].partido
-                            };
-                        } else if (code !== '95' && code !== '96') {
-                            isInvalid = true;
-                        }
+                    if (mun && MUNICIPIOS_ANO[mun] && MUNICIPIOS_ANO[mun][code]) {
+                        info = {
+                            ...info,
+                            nome: MUNICIPIOS_ANO[mun][code].nome,
+                            partido: MUNICIPIOS_ANO[mun][code].partido
+                        };
                     }
                 }
 
@@ -919,7 +942,7 @@
         const invalidEntries = entries.filter((entry) => entry.isInvalid);
         const validTotal = validEntries.reduce((sum, entry) => sum + entry.votos, 0);
         const invalidTotal = invalidEntries.reduce((sum, entry) => sum + entry.votos, 0);
-        const total = validTotal + invalidTotal;
+        const total = validTotal;
         const winner = validEntries[0] || null;
         const runnerUp = validEntries[1] || null;
         const winnerPct = winner && validTotal > 0 ? (winner.votos / validTotal) * 100 : 0;
@@ -1153,7 +1176,10 @@
                     max = pct;
                 }
 
-                if (pct >= state.perfFilterPct && pct <= state.perfFilterMaxPct) {
+                const _statsMin = state._perfDataMin ?? parseFloat(dom.perfFilterSlider?.min || 0);
+                const _statsMax = state._perfDataMax ?? parseFloat(dom.perfFilterSliderMax?.max || 100);
+                const _isFiltered = state.perfFilterPct > _statsMin + 0.001 || state.perfFilterMaxPct < _statsMax - 0.001;
+                if (!_isFiltered || (pct >= state.perfFilterPct - 0.005 && pct <= state.perfFilterMaxPct + 0.005)) {
                     sum += pct;
                     count++;
                 }
@@ -1178,7 +1204,7 @@
             }
 
             if (dom.perfSummary) {
-                dom.perfSummary.textContent = 'Sem dados disponÃ­veis';
+                dom.perfSummary.textContent = 'Sem dados disponíveis';
             }
 
             if (dom.perfFilterSlider) {
@@ -1217,27 +1243,45 @@
         }
 
         if (dom.perfSummary) {
-            dom.perfSummary.textContent = `MÃ©dia: ${formatPercent(stats.avg)} \u00B7 ${formatNumber(stats.count)} locais`;
+            dom.perfSummary.textContent = `Média: ${formatPercent(stats.avg)} \u00B7 ${formatNumber(stats.count)} locais`;
         }
 
         if (dom.perfFilterSlider && dom.perfFilterSliderMax) {
             if (stats.max > 0) {
-                const maxVal = stats.max.toFixed(2);
-                dom.perfFilterSlider.max = maxVal;
+                const minVal = parseFloat(stats.min.toFixed(2));
+                const maxVal = parseFloat(stats.max.toFixed(2));
+                // Define o range real do candidato nos atributos do slider (arredondado p/ display)
+                dom.perfFilterSlider.min    = minVal;
+                dom.perfFilterSlider.max    = maxVal;
+                dom.perfFilterSliderMax.min = minVal;
                 dom.perfFilterSliderMax.max = maxVal;
-                // Se o max ainda estÃ¡ em 100 (padrÃ£o) e o max real Ã© menor, ajusta
-                if (parseFloat(dom.perfFilterSliderMax.value) > parseFloat(maxVal)) {
+                // Guarda os extremos EXATOS (sem arredondamento) para comparação correta
+                state._perfDataMin = stats.min;
+                state._perfDataMax = stats.max;
+                // Se é um reset (veio de outro candidato/cargo), inicializa no range completo
+                // Compara contra valores EXATOS (stats.min/max), não os arredondados, para evitar reset após drag
+                const atDefault = state.perfFilterPct === 0 && state.perfFilterMaxPct >= 100;
+                const outOfRange = state.perfFilterPct < stats.min - 0.005 ||
+                                   state.perfFilterPct > stats.max + 0.005 ||
+                                   state.perfFilterMaxPct < stats.min - 0.005 ||
+                                   state.perfFilterMaxPct > stats.max + 0.005;
+                if (atDefault || outOfRange) {
+                    dom.perfFilterSlider.value    = minVal;
                     dom.perfFilterSliderMax.value = maxVal;
-                    state.perfFilterMaxPct = parseFloat(maxVal);
+                    // State guarda os valores exatos para que o ponto mínimo/máximo seja sempre incluído
+                    state.perfFilterPct    = stats.min;
+                    state.perfFilterMaxPct = stats.max;
                 }
             }
             updateRangeSelection();
         }
 
         if (dom.perfFilterLabel) {
-            const isFiltered = state.perfFilterPct > 0 || state.perfFilterMaxPct < parseFloat(dom.perfFilterSliderMax?.max || 100);
+            const _labelMin = state._perfDataMin ?? parseFloat(dom.perfFilterSlider?.min || 0);
+            const _labelMax = state._perfDataMax ?? parseFloat(dom.perfFilterSliderMax?.max || 100);
+            const isFiltered = state.perfFilterPct > _labelMin + 0.001 || state.perfFilterMaxPct < _labelMax - 0.001;
             if (isFiltered) {
-                dom.perfFilterLabel.textContent = `${formatPercent(state.perfFilterPct)} â€“ ${formatPercent(state.perfFilterMaxPct)}`;
+                dom.perfFilterLabel.textContent = `${formatPercent(state.perfFilterPct)} – ${formatPercent(state.perfFilterMaxPct)}`;
                 dom.perfFilterLabel.style.opacity = '1';
                 dom.perfFilterLabel.style.color = candidateInfo.cor;
             } else {
@@ -1250,12 +1294,17 @@
         if (!dom.perfFilterSlider || !dom.perfFilterSliderMax || !dom.rangeSelection) return;
         const min = parseFloat(dom.perfFilterSlider.min) || 0;
         const max = parseFloat(dom.perfFilterSlider.max) || 100;
-        const valMin = parseFloat(dom.perfFilterSlider.value) || 0;
-        const valMax = parseFloat(dom.perfFilterSliderMax.value) || max;
-        const leftPct = ((valMin - min) / (max - min)) * 100;
-        const rightPct = ((valMax - min) / (max - min)) * 100;
+        const span = Math.max(0.0001, max - min);
+        const v1 = parseFloat(dom.perfFilterSlider.value) || 0;
+        const v2 = parseFloat(dom.perfFilterSliderMax.value) || max;
+        const lower = Math.min(v1, v2);
+        const upper = Math.max(v1, v2);
+        const leftPct = ((lower - min) / span) * 100;
+        const rightPct = ((upper - min) / span) * 100;
         dom.rangeSelection.style.left = leftPct + '%';
         dom.rangeSelection.style.width = (rightPct - leftPct) + '%';
+        // Atualiza posição visual dos thumbs customizados
+        if (typeof window.__renderDualThumbs === 'function') window.__renderDualThumbs();
     }
 
     function switchVizMode(mode) {
@@ -1321,7 +1370,117 @@
         state.selectedMarker = null;
         state.candidatesExpanded = false;
 
+        clearCtrlSelection();
         showPlaceholder();
+    }
+
+    function clearCtrlSelection() {
+        state.ctrlSelectedMarkers.forEach((m) => {
+            if (m._summary) m.setStyle(buildMarkerStyle(m._summary, false, false));
+        });
+        state.ctrlSelectedMarkers.clear();
+        state.ctrlSelectedIds.clear();
+    }
+
+    function toggleCtrlMarker(marker) {
+        const id = marker._featureId;
+
+        // Limpar seleção simples ao entrar no modo CTRL
+        if (state.selectedMarker) {
+            state.selectedMarker.setStyle(buildMarkerStyle(state.selectedMarker._summary, false));
+            state.selectedMarker = null;
+            state.selectedFeature = null;
+            state.selectedFeatureId = null;
+        }
+
+        if (state.ctrlSelectedIds.has(id)) {
+            // Deselecionar este marker
+            state.ctrlSelectedIds.delete(id);
+            state.ctrlSelectedMarkers.delete(marker);
+            marker.setStyle(buildMarkerStyle(marker._summary, false, false));
+        } else {
+            // Selecionar
+            state.ctrlSelectedIds.add(id);
+            state.ctrlSelectedMarkers.add(marker);
+            marker.setStyle(buildMarkerStyle(marker._summary, false, true));
+        }
+
+        if (state.ctrlSelectedIds.size === 0) {
+            showPlaceholder();
+        } else {
+            renderCtrlSelection();
+        }
+    }
+
+    function restoreCtrlSelection() {
+        if (state.ctrlSelectedIds.size === 0 || !state.markersLayer) return;
+
+        const newMarkers = new Set();
+        state.markersLayer.eachLayer((marker) => {
+            if (state.ctrlSelectedIds.has(marker._featureId)) {
+                newMarkers.add(marker);
+                marker.setStyle(buildMarkerStyle(marker._summary, false, true));
+            }
+        });
+        state.ctrlSelectedMarkers = newMarkers;
+
+        if (state.ctrlSelectedMarkers.size > 0) {
+            renderCtrlSelection();
+        } else {
+            state.ctrlSelectedIds.clear();
+        }
+    }
+
+    function renderCtrlSelection() {
+        const markers = [...state.ctrlSelectedMarkers];
+        if (!markers.length) return;
+
+        const aggregated = {};
+        markers.forEach((marker) => {
+            (marker._summary?.entries || []).forEach((entry) => {
+                if (!aggregated[entry.code]) {
+                    aggregated[entry.code] = { code: entry.code, votos: 0, info: { ...entry.info }, isInvalid: entry.isInvalid };
+                }
+                aggregated[entry.code].votos += entry.votos;
+            });
+        });
+
+        const features = markers.map((m) => m._featureData);
+        const entries = Object.values(aggregated).sort((a, b) => b.votos - a.votos);
+        const validEntries   = entries.filter((e) => !e.isInvalid);
+        const invalidEntries = entries.filter((e) => e.isInvalid);
+        const validTotal     = validEntries.reduce((s, e) => s + e.votos, 0);
+        const invalidTotal   = invalidEntries.reduce((s, e) => s + e.votos, 0);
+        const total          = validTotal;
+        const winner         = validEntries[0] || null;
+        const runnerUp       = validEntries[1] || null;
+        const winnerPct      = winner && validTotal > 0 ? (winner.votos / validTotal) * 100 : 0;
+        const marginVotes    = winner ? winner.votos - (runnerUp?.votos || 0) : 0;
+        const marginPct      = validTotal > 0 ? (marginVotes / validTotal) * 100 : 0;
+
+        const munCount = {};
+        features.forEach((f) => { const m = f.properties.municipio || ''; munCount[m] = (munCount[m] || 0) + 1; });
+        const dominantMun = Object.entries(munCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+
+        const summary    = { entries, validEntries, invalidEntries, validTotal, invalidTotal, total, winner, runnerUp, winnerPct, marginVotes, marginPct };
+        const props      = { municipio: dominantMun };
+        const cargoLabel = getCandidates()[state.currentCargo]?.label || 'Cargo';
+        const n          = features.length;
+
+        if (dom.placeholder) dom.placeholder.style.display = 'none';
+        if (dom.localInfo)   dom.localInfo.style.display = 'block';
+        if (dom.localName)   dom.localName.textContent = `Seleção CTRL — ${n} ${n === 1 ? 'local' : 'locais'}`;
+        if (dom.localMeta) {
+            const munNames = Object.keys(munCount).map(titleCase).join(', ');
+            dom.localMeta.innerHTML = [
+                `Municípios: ${escapeHtml(munNames)}`,
+                `Soma de ${n} locais de votação`
+            ].map((item) => `<span>${item}</span>`).join('');
+        }
+
+        renderMetrics(summary, props);
+        renderCandidateCards(summary, cargoLabel, { properties: props });
+        setPanelCollapsed(dom.panelRight, false);
     }
 
     function restoreSelection() {
@@ -1394,7 +1553,7 @@
                 `Município: ${escapeHtml(titleCase(props.municipio))}`,
                 `Distrito: ${escapeHtml(titleCase(props.distrito || props.municipio))}`,
                 `Zona ${escapeHtml(String(props.zona))} - ${escapeHtml(titleCase(props.zona_nome || props.municipio))}`,
-                `${escapeHtml(props.tipo || 'Local')} - ${escapeHtml(titleCase(props.endereco || 'Endereco nao informado'))}`
+                `${escapeHtml(props.tipo || 'Local')} - ${escapeHtml(titleCase(props.endereco || 'Endereço não informado'))}`
             ].map((item) => `<span>${item}</span>`).join('');
         }
 
@@ -1421,14 +1580,10 @@
 
         const blankVotes = summary.invalidEntries.find((entry) => entry.code === '95')?.votos || 0;
         const nullVotes = summary.invalidEntries.find((entry) => entry.code === '96')?.votos || 0;
-        const blankPct = summary.total > 0 ? (blankVotes / summary.total) * 100 : 0;
-        const nullPct = summary.total > 0 ? (nullVotes / summary.total) * 100 : 0;
-
         const metrics = [
-            { label: 'Comparecimento', value: formatNumber(summary.total) },
-            { label: 'Votos válidos', value: formatNumber(summary.validTotal) },
-            { label: `Brancos (${formatPercent(blankPct)})`, value: `${formatNumber(blankVotes)} votos` },
-            { label: `Nulos (${formatPercent(nullPct)})`, value: `${formatNumber(nullVotes)} votos` },
+            { label: 'Votos válidos', value: formatNumber(summary.total) },
+            { label: 'Brancos', value: `${formatNumber(blankVotes)} votos` },
+            { label: 'Nulos', value: `${formatNumber(nullVotes)} votos` },
             {
                 label: 'Margem',
                 value: summary.winner
@@ -1632,7 +1787,7 @@
                 features.push({
                     tipo: 'local',
                     label: titleCase(entry.nomeRaw),
-                    sub: `${titleCase(entry.distritoRaw)} Â· ${titleCase(entry.municipioRaw)}`,
+                    sub: `${titleCase(entry.distritoRaw)} · ${titleCase(entry.municipioRaw)}`,
                     endereco: `${titleCase(entry.enderecoRaw)}, ${titleCase(entry.municipioRaw)}`,
                     feature: entry.feature
                 });
@@ -1905,12 +2060,8 @@
                                       : null;
                 if (MUNICIPIOS_ANO2) {
                     const mun = state.currentMunicipio;
-                    if (mun && MUNICIPIOS_ANO2[mun]) {
-                        if (MUNICIPIOS_ANO2[mun][code]) {
-                            info = { ...info, nome: MUNICIPIOS_ANO2[mun][code].nome, partido: MUNICIPIOS_ANO2[mun][code].partido };
-                        } else if (code !== '95' && code !== '96') {
-                            isInvalid = true;
-                        }
+                    if (mun && MUNICIPIOS_ANO2[mun] && MUNICIPIOS_ANO2[mun][code]) {
+                        info = { ...info, nome: MUNICIPIOS_ANO2[mun][code].nome, partido: MUNICIPIOS_ANO2[mun][code].partido };
                     }
                 }
 
@@ -1922,7 +2073,7 @@
         const invalidEntries = entries.filter((e) => e.isInvalid);
         const validTotal = validEntries.reduce((s, e) => s + e.votos, 0);
         const invalidTotal = invalidEntries.reduce((s, e) => s + e.votos, 0);
-        const total = validTotal + invalidTotal;
+        const total = validTotal;
         const winner = validEntries[0] || null;
         const runnerUp = validEntries[1] || null;
         const winnerPct = winner && validTotal > 0 ? (winner.votos / validTotal) * 100 : 0;
@@ -1937,13 +2088,83 @@
 
         if (dom.placeholder) dom.placeholder.style.display = 'none';
         if (dom.localInfo) dom.localInfo.style.display = 'block';
-        if (dom.localName) dom.localName.textContent = `${bairroLabel} â€” ${features.length} locais`;
+        if (dom.localName) dom.localName.textContent = `${bairroLabel} – ${features.length} locais`;
         if (dom.localMeta) {
             dom.localMeta.innerHTML = [
-                `Municipio: ${escapeHtml(munLabel)}`,
+                `Município: ${escapeHtml(munLabel)}`,
                 `Distrito: ${escapeHtml(bairroLabel)}`,
-                `Soma de ${features.length} locais de votaÃ§Ã£o`
+                `Soma de ${features.length} locais de votação`
             ].map((item) => `<span>${item}</span>`).join('');
+        }
+
+        renderMetrics(summary, props);
+        renderCandidateCards(summary, cargoLabel, { properties: props });
+    }
+
+    function renderMunicipioSummary() {
+        const mun = state.currentMunicipio;
+        const allMunicipios = mun === '';
+
+        const features = allMunicipios
+            ? getAllFeatures()
+            : getAllFeatures().filter((f) => f.properties.municipio === mun);
+
+        if (!features.length) return;
+
+        const cargoData = getCandidates()[state.currentCargo] || { candidates: {} };
+        const aggregated = {};
+
+        features.forEach((feature) => {
+            const votes = feature.properties[state.currentCargo] || {};
+            for (const code in votes) {
+                aggregated[code] = (aggregated[code] || 0) + (Number(votes[code]) || 0);
+            }
+        });
+
+        const MUNICIPIOS_ANO2 = state.currentYear === '2004' ? (typeof MUNICIPIOS_2004 !== 'undefined' ? MUNICIPIOS_2004 : null)
+                              : state.currentYear === '1996' ? (typeof MUNICIPIOS_1996 !== 'undefined' ? MUNICIPIOS_1996 : null)
+                              : state.currentYear === '2000' ? (typeof MUNICIPIOS_2000 !== 'undefined' ? MUNICIPIOS_2000 : null)
+                              : null;
+
+        const entries = Object.entries(aggregated)
+            .map(([code, total]) => {
+                let info = cargoData.candidates[code] || { nome: `Candidato ${code}`, partido: '', cor: '#737373' };
+                let isInvalid = INVALID_CODES.has(code);
+
+                if (MUNICIPIOS_ANO2 && !allMunicipios) {
+                    if (mun && MUNICIPIOS_ANO2[mun] && MUNICIPIOS_ANO2[mun][code]) {
+                        info = { ...info, nome: MUNICIPIOS_ANO2[mun][code].nome, partido: MUNICIPIOS_ANO2[mun][code].partido };
+                    }
+                }
+
+                return { code, votos: total, info: { ...info, familia: info.familia || info.partido }, isInvalid };
+            })
+            .sort((a, b) => b.votos - a.votos);
+
+        const validEntries = entries.filter((e) => !e.isInvalid);
+        const invalidEntries = entries.filter((e) => e.isInvalid);
+        const validTotal = validEntries.reduce((s, e) => s + e.votos, 0);
+        const invalidTotal = invalidEntries.reduce((s, e) => s + e.votos, 0);
+        const total = validTotal;
+        const winner = validEntries[0] || null;
+        const runnerUp = validEntries[1] || null;
+        const winnerPct = winner && validTotal > 0 ? (winner.votos / validTotal) * 100 : 0;
+        const marginVotes = winner ? winner.votos - (runnerUp?.votos || 0) : 0;
+        const marginPct = validTotal > 0 ? (marginVotes / validTotal) * 100 : 0;
+
+        const summary = { entries, validEntries, invalidEntries, validTotal, invalidTotal, total, winner, runnerUp, winnerPct, marginVotes, marginPct };
+        const props = { municipio: mun };
+        const cargoLabel = getCandidates()[state.currentCargo]?.label || 'Cargo';
+        const titleLabel = allMunicipios ? 'Toda a RMSP' : titleCase(mun);
+        const metaLines = allMunicipios
+            ? [`Região: Toda a RMSP`, `Soma de ${features.length} locais de votação`]
+            : [`Município: ${escapeHtml(titleCase(mun))}`, `Soma de ${features.length} locais de votação`];
+
+        if (dom.placeholder) dom.placeholder.style.display = 'none';
+        if (dom.localInfo) dom.localInfo.style.display = 'block';
+        if (dom.localName) dom.localName.textContent = `${titleLabel} – ${features.length} locais`;
+        if (dom.localMeta) {
+            dom.localMeta.innerHTML = metaLines.map((item) => `<span>${item}</span>`).join('');
         }
 
         renderMetrics(summary, props);
@@ -2088,6 +2309,8 @@
             state.selectedFeatureId = null;
             state.selectedFeature = null;
             state.selectedMarker = null;
+            state.ctrlSelectedIds.clear();
+            state.ctrlSelectedMarkers.clear();
             if (dom.searchInput) dom.searchInput.value = '';
             if (dom.searchClear) dom.searchClear.style.display = 'none';
             if (dom.bairroInput) dom.bairroInput.value = '';
@@ -2095,6 +2318,7 @@
             dom.selectTurno.value = '_1t';
             
             updateCargoState();
+            syncSomarMunicipioBtn();
             loadData();
         };
 
@@ -2105,6 +2329,14 @@
         if (dom.chipYear1996) dom.chipYear1996.addEventListener('click', () => updateYearSelection('1996'));
         if (dom.chipYear1994) dom.chipYear1994.addEventListener('click', () => updateYearSelection('1994'));
 
+        const YEARS_NACIONAL = new Set(['1994', '1998', '2002']);
+
+        function syncSomarMunicipioBtn() {
+            if (!dom.btnSomarMunicipio) return;
+            const show = state.currentMunicipio !== '' || YEARS_NACIONAL.has(state.currentYear);
+            dom.btnSomarMunicipio.style.display = show ? 'inline-block' : 'none';
+        }
+
         if (dom.selectMunicipio) {
             dom.selectMunicipio.addEventListener('change', () => {
                 state.currentBairro = null;
@@ -2114,7 +2346,7 @@
                 if (dom.perfFilterSlider) dom.perfFilterSlider.value = 0;
                 if (dom.perfFilterSliderMax) { dom.perfFilterSliderMax.value = dom.perfFilterSliderMax.max || 100; }
                 updateRangeSelection();
-                
+
                 if (dom.searchInput) {
                     dom.searchInput.value = '';
                     if (dom.searchClear) dom.searchClear.style.display = 'none';
@@ -2123,12 +2355,22 @@
                     dom.bairroInput.value = '';
                     if (dom.bairroClear) dom.bairroClear.style.display = 'none';
                 }
+                if (dom.btnSomarBairro) dom.btnSomarBairro.style.display = 'none';
 
-                applyMunicipioChange(dom.selectMunicipio.value);
+                const newMun = dom.selectMunicipio.value;
+                applyMunicipioChange(newMun);
+                syncSomarMunicipioBtn();
                 renderMarkers({ refit: true });
                 syncDetailPanel();
             });
         }
+
+        if (dom.btnSomarMunicipio) {
+            dom.btnSomarMunicipio.addEventListener('click', renderMunicipioSummary);
+        }
+
+        // Show button on initial load if year is national
+        syncSomarMunicipioBtn();
 
         if (dom.chipSolid) {
             dom.chipSolid.addEventListener('click', () => {
@@ -2196,33 +2438,120 @@
             });
         }
 
-        if (dom.perfFilterSlider) {
-            dom.perfFilterSlider.addEventListener('input', () => {
-                let minVal = parseFloat(dom.perfFilterSlider.value) || 0;
-                let maxVal = parseFloat(dom.perfFilterSliderMax?.value) || 100;
-                if (minVal > maxVal) {
-                    minVal = maxVal;
-                    dom.perfFilterSlider.value = minVal;
-                }
-                state.perfFilterPct = minVal;
+        // Dual-range slider customizado: drag handling em JS puro
+        const wrap     = document.getElementById('dualRangeWrap');
+        const thumbMin = document.getElementById('thumbMin');
+        const thumbMax = document.getElementById('thumbMax');
+
+        function _sliderRange() {
+            const minA = parseFloat(dom.perfFilterSlider?.min) || 0;
+            const maxA = parseFloat(dom.perfFilterSlider?.max) || 100;
+            return { min: minA, max: maxA, span: Math.max(0.0001, maxA - minA) };
+        }
+        function _valueToPercent(v) {
+            const r = _sliderRange();
+            return Math.max(0, Math.min(100, ((v - r.min) / r.span) * 100));
+        }
+        function _percentToValue(pct) {
+            const r = _sliderRange();
+            return r.min + (Math.max(0, Math.min(100, pct)) / 100) * r.span;
+        }
+        function _renderThumbs() {
+            if (!thumbMin || !thumbMax || !dom.perfFilterSlider || !dom.perfFilterSliderMax) return;
+            const minVal = parseFloat(dom.perfFilterSlider.value) || 0;
+            const maxVal = parseFloat(dom.perfFilterSliderMax.value) || 100;
+            thumbMin.style.left = _valueToPercent(minVal) + '%';
+            thumbMax.style.left = _valueToPercent(maxVal) + '%';
+        }
+        // Expõe globalmente para updateRangeSelection
+        window.__renderDualThumbs = _renderThumbs;
+
+        function _startDrag(e, thumb, isMax) {
+            if (!wrap) return;
+            e.preventDefault();
+            e.stopPropagation();
+            thumb.classList.add('dragging');
+            // Recalcula rect a cada drag (caso o painel tenha sido movido)
+            let rect = wrap.getBoundingClientRect();
+            let pendingRender = false;
+
+            function _applyMove(ev) {
+                rect = wrap.getBoundingClientRect();
+                const clientX = (ev.touches && ev.touches[0]) ? ev.touches[0].clientX
+                              : (ev.changedTouches && ev.changedTouches[0]) ? ev.changedTouches[0].clientX
+                              : ev.clientX;
+                if (typeof clientX !== 'number') return;
+                const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+                const pct = rect.width > 0 ? (x / rect.width) * 100 : 0;
+                let value = _percentToValue(pct);
+
+                const r = _sliderRange();
+                if (value < r.min) value = r.min;
+                if (value > r.max) value = r.max;
+
+                // Atualiza apenas o slider ativo — sem constraint de min < max (permite cruzar)
+                const activeSlider = isMax ? dom.perfFilterSliderMax : dom.perfFilterSlider;
+                activeSlider.value = String(value);
+
+                // Determina lower/upper independente de qual thumb está em qual posição
+                const v1 = parseFloat(dom.perfFilterSlider.value);
+                const v2 = parseFloat(dom.perfFilterSliderMax.value);
+                const lower = Math.min(v1, v2);
+                const upper = Math.max(v1, v2);
+
+                // Sincroniza state usando valores exatos quando nos extremos
+                const dataMin = state._perfDataMin ?? lower;
+                const dataMax = state._perfDataMax ?? upper;
+                state.perfFilterPct    = (lower <= r.min + 0.001) ? dataMin : lower;
+                state.perfFilterMaxPct = (upper >= r.max - 0.001) ? dataMax : upper;
+
+                // Atualização visual IMEDIATA do thumb e barra (não depende de renderMarkers)
+                _renderThumbs();
                 updateRangeSelection();
-                renderMarkers();
-            });
+
+                // Throttle o renderMarkers (caro) com requestAnimationFrame
+                if (!pendingRender) {
+                    pendingRender = true;
+                    requestAnimationFrame(() => {
+                        pendingRender = false;
+                        try { renderMarkers(); } catch (err) { /* não interrompe drag */ }
+                    });
+                }
+            }
+
+            function _move(ev) {
+                if (ev.cancelable) ev.preventDefault();
+                _applyMove(ev);
+            }
+
+            function _end() {
+                thumb.classList.remove('dragging');
+                document.removeEventListener('mousemove', _move);
+                document.removeEventListener('mouseup', _end);
+                document.removeEventListener('touchmove', _move);
+                document.removeEventListener('touchend', _end);
+                document.removeEventListener('touchcancel', _end);
+                // Garante render final no fim do drag
+                try { renderMarkers(); } catch (err) {}
+            }
+
+            document.addEventListener('mousemove', _move);
+            document.addEventListener('mouseup', _end);
+            document.addEventListener('touchmove', _move, { passive: false });
+            document.addEventListener('touchend', _end);
+            document.addEventListener('touchcancel', _end);
         }
 
-        if (dom.perfFilterSliderMax) {
-            dom.perfFilterSliderMax.addEventListener('input', () => {
-                let maxVal = parseFloat(dom.perfFilterSliderMax.value) || 100;
-                let minVal = parseFloat(dom.perfFilterSlider?.value) || 0;
-                if (maxVal < minVal) {
-                    maxVal = minVal;
-                    dom.perfFilterSliderMax.value = maxVal;
-                }
-                state.perfFilterMaxPct = maxVal;
-                updateRangeSelection();
-                renderMarkers();
-            });
+        if (thumbMin) {
+            thumbMin.addEventListener('mousedown',  (e) => _startDrag(e, thumbMin, false));
+            thumbMin.addEventListener('touchstart', (e) => _startDrag(e, thumbMin, false), { passive: false });
         }
+        if (thumbMax) {
+            thumbMax.addEventListener('mousedown',  (e) => _startDrag(e, thumbMax, true));
+            thumbMax.addEventListener('touchstart', (e) => _startDrag(e, thumbMax, true), { passive: false });
+        }
+        // Render inicial dos thumbs
+        _renderThumbs();
 
         if (dom.themeToggle) {
             dom.themeToggle.addEventListener('click', () => {
@@ -2247,7 +2576,6 @@
             const expandLeftHandler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('expandLeft triggered');
                 setPanelCollapsed(dom.panelLeft, false);
             };
             dom.expandLeft.addEventListener('click', expandLeftHandler);
@@ -2260,7 +2588,6 @@
             const expandRightHandler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('expandRight triggered');
                 setPanelCollapsed(dom.panelRight, false);
             };
             dom.expandRight.addEventListener('click', expandRightHandler);
@@ -2321,6 +2648,20 @@
         if (dom.applyColorButton) {
             dom.applyColorButton.addEventListener('click', applyColorDraft);
         }
+
+        // Restaura pointer-events dos sliders após qualquer drag (mouseup global)
+        const restoreSliderPointerEvents = () => {
+            if (dom.perfFilterSlider) {
+                dom.perfFilterSlider.style.pointerEvents = '';
+                dom.perfFilterSlider.style.zIndex = '';
+            }
+            if (dom.perfFilterSliderMax) {
+                dom.perfFilterSliderMax.style.pointerEvents = '';
+                dom.perfFilterSliderMax.style.zIndex = '';
+            }
+        };
+        document.addEventListener('mouseup', restoreSliderPointerEvents);
+        document.addEventListener('touchend', restoreSliderPointerEvents);
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
@@ -2475,7 +2816,6 @@
                     if (dom.expandLeft) {
                         dom.expandLeft.classList.add('visible');
                         dom.expandLeft.classList.remove('hidden');
-                        console.log('expandLeft button made visible');
                     }
                 }
                 if (dom.panelRight) {

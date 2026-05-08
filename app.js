@@ -552,6 +552,7 @@ function applyI18n() {
             rmspTitle: "São Paulo Metropolitan Region",
             rmspDesc: "Elections 1994–2004 · President, Governor, Senator and Mayors",
             el1955Title: "1955 Brazilian Elections",
+            el1960Title: "1960 Brazilian Elections",
             pleb1993Title: "1993 Plebiscite",
             pleb1993Desc: "Form and System of Government",
             pleb1993Counter: "1993 Plebiscite",
@@ -578,6 +579,7 @@ function applyI18n() {
                 rmspTitle: "Región Metropolitana de SP",
                 rmspDesc: "Elecciones 1994–2004 · Presidente, Gobernador, Senador y Alcaldes",
                 el1955Title: "Elecciones Brasileñas de 1955",
+                el1960Title: "Elecciones Brasileñas de 1960",
                 pleb1993Title: "Plebiscito de 1993",
                 pleb1993Desc: "Forma y Sistema de Gobierno",
                 pleb1993Counter: "Plebiscito 1993",
@@ -603,6 +605,7 @@ function applyI18n() {
                 rmspTitle: "Região Metropolitana de SP",
                 rmspDesc: "Eleições 1994–2004 · Presidente, Governador, Senador e Prefeitos",
                 el1955Title: "Eleições Brasileiras de 1955",
+                el1960Title: "Eleições Brasileiras de 1960",
                 pleb1993Title: "Plebiscito de 1993",
                 pleb1993Desc: "Forma e Sistema de Governo",
                 pleb1993Counter: "Plebiscito 1993",
@@ -642,6 +645,9 @@ function applyI18n() {
     });
     document.querySelectorAll("[data-i18n-1955-title]").forEach(function(node) {
         node.textContent = staticCopy.el1955Title;
+    });
+    document.querySelectorAll("[data-i18n-1960-title]").forEach(function(node) {
+        node.textContent = staticCopy.el1960Title;
     });
     document.querySelectorAll("[data-i18n-1955-btn-pres]").forEach(function(n) { n.textContent = staticCopy.el1955BtnPres; });
     document.querySelectorAll("[data-i18n-1955-btn-vice]").forEach(function(n) { n.textContent = staticCopy.el1955BtnVice; });
@@ -2186,14 +2192,19 @@ function reiniciar() {
 }
 
 function abrirMapaEleicao(ano) {
-    if (ano !== "1955") return;
     window._lastElectionYear = ano;
-    window._1955cargo = "presidente";
+    window._electionCargo = "presidente";
     document.querySelectorAll("[data-cargo]").forEach(function(btn) {
         btn.classList.toggle("ativo", btn.dataset.cargo === "presidente");
     });
+    // Atualiza título da tela
+    var titulo = document.getElementById("mapa-titulo");
+    if (titulo) {
+        var prefixo = currentLang === "en" ? "Elections" : currentLang === "es" ? "Elecciones" : "Eleições";
+        titulo.textContent = prefixo + " " + ano;
+    }
     ir("t-mapa-eleicao");
-    
+
     setTimeout(function() {
         if (!electionMapInstance) {
             electionMapInstance = L.map("mapEleicao").setView([-14.235, -51.925], 4);
@@ -2207,17 +2218,16 @@ function abrirMapaEleicao(ano) {
         } else {
             electionMapInstance.invalidateSize();
         }
-        
-        carregarDadosEleicao(ano, window._1955cargo || "presidente");
+        carregarDadosEleicao(ano, window._electionCargo || "presidente");
     }, 200);
 }
 
 function set1955Cargo(cargo) {
-    window._1955cargo = cargo;
+    window._electionCargo = cargo;
     document.querySelectorAll("[data-cargo]").forEach(function(btn) {
         btn.classList.toggle("ativo", btn.dataset.cargo === cargo);
     });
-    if (electionMapInstance) carregarDadosEleicao("1955", cargo);
+    if (electionMapInstance) carregarDadosEleicao(window._lastElectionYear || "1955", cargo);
 }
 
 function fecharMapaEleicao() {
@@ -2490,11 +2500,14 @@ async function carregarDadosEleicao(ano, cargo) {
     if (overlay) overlay.style.display = "flex";
 
     try {
-        var isVice = (ano === "1955" && cargo === "vice");
+        var isVice = cargo === "vice";
+        var is1960 = ano === "1960";
         var cacheKey = ano + "-" + cargo;
-        var url = isVice ? "1955-vice.geojson"
-                : (ano === "1955" ? "1955 brasil presidente.geojson"
-                                  : "data/" + ano + ".geojson");
+        var url = ano === "1955"
+            ? (isVice ? "1955-vice.geojson" : "1955 brasil presidente.geojson")
+            : ano === "1960"
+                ? (isVice ? "1960-vice.geojson" : "1960-presidente.geojson")
+                : "data/" + ano + ".geojson";
 
         if (!_el1955cache[cacheKey]) {
             var response = await fetch(url);
@@ -2513,24 +2526,50 @@ async function carregarDadosEleicao(ano, cargo) {
             if (!vencedor || vencedor === "NADA") return "#747474";
             if (vencedor === "EMPATE") return "#e8e8e8";
             var colors = {
-                // Presidente — PSD (azul-ciano)
+                // 1955 Presidente — PSD (azul-ciano)
                 "PSD 20": "#4ed4ff", "PSD 30": "#2eccff", "PSD 40": "#0fc5ff",
                 "PSD 50": "#00b6f0", "PSD 60": "#009fd1", "PSD 70": "#0083ad",
-                "PSD 80": "#00678a", "PSD 90": "#004c66",
-                // Presidente — UDN (azul-escuro)
+                "PSD 80": "#00678a", "PSD 90": "#004c66", "PSD 100": "#003142",
+                // 1955 Presidente — UDN (azul-escuro)
                 "UDN 30": "#5b6dc8", "UDN 40": "#4055bf", "UDN 50": "#384ba8",
                 "UDN 60": "#304091", "UDN 70": "#29367a", "UDN 80": "#222d63",
-                "UDN 90": "#1a224c",
-                // Presidente — PSP (marrom-rosado)
-                "PSP 20": "#b6969a", "PSP 30": "#a1787d", "PSP 40": "#876569",
-                "PSP 50": "#6e5255", "PSP 60": "#533e40", "PSP 70": "#3b2c2d",
-                // Presidente — PRP (verde)
+                "UDN 90": "#1a224c", "UDN 100": "#121735",
+                // 1955 Presidente — PSP (marrom quente)
+                "PSP 20": "#D69E76", "PSP 30": "#CA824E", "PSP 40": "#B16935",
+                "PSP 50": "#895129", "PSP 60": "#6A3F20", "PSP 70": "#4E2E17",
+                "PSP 80": "#372010", "PSP 90": "#23150A", "PSP 100": "#0f0a04",
+                // 1955 Presidente — PRP (verde)
                 "PRP 20": "#77d36f", "PRP 30": "#5fcc55", "PRP 40": "#47c33c",
-                "PRP 50": "#3ba432", "PRP 70": "#287a20",
-                // Vice — PTB/Goulart (vermelho)
+                "PRP 50": "#3ba432", "PRP 60": "#318f29", "PRP 70": "#287a20",
+                "PRP 80": "#1e6517", "PRP 90": "#15500e", "PRP 100": "#0b3b05",
+                // 1955 Vice — PTB/Goulart (vermelho)
                 "PTB 20": "#ff9090", "PTB 30": "#f06060", "PTB 40": "#de3a3a",
                 "PTB 50": "#c42020", "PTB 60": "#a81010", "PTB 70": "#8b0606",
-                "PTB 80": "#6e0303", "PTB 90": "#500101"
+                "PTB 80": "#6e0303", "PTB 90": "#500101", "PTB 100": "#320000",
+                // 1960 Presidente — Jânio (âmbar/dourado)
+                "JÂNIO 20": "#77d36f", "JÂNIO 30": "#5dca53", "JÂNIO 40": "#47c33c",
+                "JÂNIO 50": "#3ba432", "JÂNIO 60": "#328c2b", "JÂNIO 70": "#2a7524",
+                "JÂNIO 80": "#215a1c", "JÂNIO 90": "#173e13", "JÂNIO 100": "#0d220a",
+                // 1960 Presidente — Lott (ciano, igual PSD 1955)
+                "LOTT 20": "#4ed4ff", "LOTT 30": "#2eccff", "LOTT 40": "#0fc5ff",
+                "LOTT 50": "#00b6f0", "LOTT 60": "#009fd1", "LOTT 70": "#0083ad",
+                "LOTT 80": "#00678a", "LOTT 90": "#004c66", "LOTT 100": "#003142",
+                // 1960 Presidente — Adhemar (marrom quente, igual PSP 1955)
+                "ADHEMAR 20": "#D69E76", "ADHEMAR 30": "#CA824E", "ADHEMAR 40": "#B16935",
+                "ADHEMAR 50": "#895129", "ADHEMAR 60": "#6A3F20", "ADHEMAR 70": "#4E2E17",
+                "ADHEMAR 80": "#372010", "ADHEMAR 90": "#23150A", "ADHEMAR 100": "#0f0a04",
+                // 1960 Vice — Jango (vermelho, igual PTB 1955)
+                "JANGO 20": "#ff9090", "JANGO 30": "#f06060", "JANGO 40": "#de3a3a",
+                "JANGO 50": "#c42020", "JANGO 60": "#a81010", "JANGO 70": "#8b0606",
+                "JANGO 80": "#6e0303", "JANGO 90": "#500101", "JANGO 100": "#320000",
+                // 1960 Vice — Milton (azul, igual UDN 1955)
+                "MILTON 20": "#7585d1", "MILTON 30": "#5b6dc8", "MILTON 40": "#4055bf",
+                "MILTON 50": "#384ba8", "MILTON 60": "#304091", "MILTON 70": "#29367a",
+                "MILTON 80": "#222d63", "MILTON 90": "#1a224c", "MILTON 100": "#121735",
+                // 1960 Vice — Ferrari (amarelo)
+                "FERRARI 20": "#f0db75", "FERRARI 30": "#edd355", "FERRARI 40": "#eacc39",
+                "FERRARI 50": "#e7c418", "FERRARI 60": "#c6a815", "FERRARI 70": "#ab9112",
+                "FERRARI 80": "#8f790f", "FERRARI 90": "#73620c", "FERRARI 100": "#574b09"
             };
             return colors[vencedor] || "#888888";
         }
@@ -2550,7 +2589,27 @@ async function carregarDadosEleicao(ano, cargo) {
                 var tooltipHtml = "<div class='kepler-tooltip'>" +
                     "<div class='kt-row'><span class='kt-label'>Cidade</span><span class='kt-val'>" + (props.nome || "") + "</span></div>";
 
-                if (isVice) {
+                if (is1960) {
+                    if (isVice) {
+                        tooltipHtml +=
+                            "<div class='kt-row'><span class='kt-label'>João Goulart (PTB)</span><span class='kt-val'>" + (props.jango != null ? props.jango : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Milton Campos (UDN)</span><span class='kt-val'>" + (props.milton != null ? props.milton : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Fernando Ferrari (MTR)</span><span class='kt-val'>" + (props.ferrari != null ? props.ferrari : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Jango %</span><span class='kt-val'>" + (props.jango_pct != null ? props.jango_pct : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Milton %</span><span class='kt-val'>" + (props.milton_pct != null ? props.milton_pct : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Ferrari %</span><span class='kt-val'>" + (props.ferrari_pct != null ? props.ferrari_pct : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Votos Nominais</span><span class='kt-val'>" + (props.total != null ? props.total : "") + "</span></div>";
+                    } else {
+                        tooltipHtml +=
+                            "<div class='kt-row'><span class='kt-label'>Jânio Quadros (UDN)</span><span class='kt-val'>" + (props.janio != null ? props.janio : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Mal. Lott (PSD)</span><span class='kt-val'>" + (props.lott != null ? props.lott : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Adhemar de Barros (PSP)</span><span class='kt-val'>" + (props.adhemar != null ? props.adhemar : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Jânio %</span><span class='kt-val'>" + (props.janio_pct != null ? props.janio_pct : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Lott %</span><span class='kt-val'>" + (props.lott_pct != null ? props.lott_pct : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Adhemar %</span><span class='kt-val'>" + (props.adhemar_pct != null ? props.adhemar_pct : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Votos Nominais</span><span class='kt-val'>" + (props.total != null ? props.total : "") + "</span></div>";
+                    }
+                } else if (isVice) {
                     tooltipHtml +=
                         "<div class='kt-row'><span class='kt-label'>João Goulart (PTB)</span><span class='kt-val'>" + (props.PTB || "") + "</span></div>" +
                         "<div class='kt-row'><span class='kt-label'>Milton Campos (UDN)</span><span class='kt-val'>" + (props.UDN || "") + "</span></div>" +
@@ -2581,7 +2640,8 @@ async function carregarDadosEleicao(ano, cargo) {
                         l.setStyle({ fillOpacity: 1, weight: 2, color: "#fff", opacity: 1 });
                         if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) l.bringToFront();
                     },
-                    mouseout: function(e) { geojsonLayer.resetStyle(e.target); }
+                    mouseout: function(e) { geojsonLayer.resetStyle(e.target); },
+                    click: function(e) { L.DomEvent.stopPropagation(e); }
                 });
             }
         }).addTo(electionMapInstance);
@@ -2676,5 +2736,8 @@ document.addEventListener("DOMContentLoaded", function() {
     startCountdown();
     carregarResumoHome();
     var hash = window.location.hash.replace(/^#/, "") || "t-eleicoes";
+    // Telas que precisam de inicialização especial não podem ser abertas direto pelo hash
+    var TELAS_DINAMICAS = ["t-mapa-eleicao", "t-plebiscito1993", "t-quiz", "t-resultado", "t-mundo"];
+    if (TELAS_DINAMICAS.indexOf(hash) !== -1) hash = "t-eleicoes";
     ir(hash, false);
 });

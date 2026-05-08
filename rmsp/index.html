@@ -36,7 +36,7 @@
             </div>
             <div class="body">
                 <!-- Ano da Eleição -->
-                <div class="section" style="padding-bottom: 0; margin-bottom: 5px;">
+                <div class="section" style="margin-bottom: 5px;">
                     <h3>Ano Eleitoral</h3>
                     <div class="chip-group">
                         <button class="chip-button" id="chipYear2004">2004</button>
@@ -75,14 +75,22 @@
                     border: 1.5px solid var(--accent);
                     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
                 ">
-                    <h3 style="margin:0 0 8px; color:var(--accent); font-size:11px; letter-spacing:0.08em">MUNICÍPIO</h3>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin:0 0 8px">
+                        <h3 style="margin:0; color:var(--accent); font-size:11px; letter-spacing:0.08em">MUNICÍPIO</h3>
+                        <button id="btnSomarMunicipio" type="button" style="
+                            display:none;
+                            font-size:11px; font-weight:700; letter-spacing:0.05em;
+                            padding:3px 10px; border-radius:20px; border:none; cursor:pointer;
+                            background:#2563eb; color:#fff;
+                        " title="Somar todos os locais deste município">SOMAR</button>
+                    </div>
                     <select class="select" id="selectMunicipio" style="width:100%">
                         <option value="">Todos os municípios</option>
                     </select>
                 </div>
 
                 <!-- Busca de Bairro -->
-                <div class="section" style="position:relative; padding-bottom:0; margin-bottom:5px">
+                <div class="section" style="position:relative; margin-bottom:5px">
                     <div style="display:flex; align-items:center; justify-content:space-between">
                         <h3>Bairro / Distrito</h3>
                         <button id="btnSomarBairro" type="button" style="
@@ -156,15 +164,21 @@
                 <div class="section viz-section" id="vizSection">
                     <h3>Visualização do Mapa</h3>
 
-                    <div class="viz-label">Modo de Cor</div>
                     <div class="chip-group" style="margin-bottom:10px">
                         <button class="chip-button active" id="chipVencedor">Vencedor</button>
                         <button class="chip-button" id="chipVencidos">Vitórias</button>
                         <button class="chip-button" id="chipDesempenho">Desempenho</button>
                     </div>
 
+                    <!-- Vitórias: filtragem de locais vencidos por um candidato -->
+                    <div id="vencidosOptions" style="display:none">
+                        <div class="viz-label">Candidato Vencedor</div>
+                        <select class="select" id="selectVencidosCandidate"></select>
+                    </div>
+
                     <!-- Vencedor: sub-opções de estilo -->
                     <div id="vencedorOptions">
+                        <div class="viz-label">Modo de Cor</div>
                         <div class="chip-group">
                             <button class="chip-button active" data-mode="solid" id="chipSolid">Cor Estática</button>
                             <button class="chip-button" data-mode="gradient" id="chipGradient">Degradê</button>
@@ -176,11 +190,13 @@
                         <div class="viz-label">Candidato (para modo Desempenho)</div>
                         <select class="select" id="selectPerfCandidate"></select>
                         <div id="perfGradientContainer" style="margin-top:12px">
-                            <div style="position: relative; height: 16px;">
-                                <div class="gradient-bar" id="gradientBar" style="position: absolute; width: 100%; top: 0; left: 0;"></div>
+                            <div class="dual-range-wrap" id="dualRangeWrap" style="position: relative; height: 32px;">
+                                <div class="gradient-bar" id="gradientBar" style="position: absolute; width: 100%; top: 8px; left: 0; height: 16px;"></div>
                                 <div class="range-selection" id="rangeSelection"></div>
-                                <input type="range" id="perfFilterSlider" class="perf-slider perf-slider-min" min="0" max="100" step="0.1" value="0">
-                                <input type="range" id="perfFilterSliderMax" class="perf-slider perf-slider-max" min="0" max="100" step="0.1" value="100">
+                                <div class="dual-thumb dual-thumb-min" id="thumbMin" tabindex="0"><div class="dual-thumb-line"></div></div>
+                                <div class="dual-thumb dual-thumb-max" id="thumbMax" tabindex="0"><div class="dual-thumb-line"></div></div>
+                                <input type="hidden" id="perfFilterSlider" min="0" max="100" step="0.1" value="0">
+                                <input type="hidden" id="perfFilterSliderMax" min="0" max="100" step="0.1" value="100">
                             </div>
                             <div class="gradient-labels" style="position: relative;">
                                 <span class="gradient-label-min" id="gradientMin">▼ 0,00%</span>
@@ -191,11 +207,6 @@
                         </div>
                     </div>
 
-                    <!-- Vitórias: filtragem de locais vencidos por um candidato -->
-                    <div id="vencidosOptions" style="display:none">
-                        <div class="viz-label">Candidato Vencedor</div>
-                        <select class="select" id="selectVencidosCandidate"></select>
-                    </div>
                 </div>
             </div>
         </div>

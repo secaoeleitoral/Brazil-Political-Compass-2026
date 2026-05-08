@@ -728,9 +728,119 @@ window.APP_STATIC_DATA = {
                                         "axis":  "social",
                                         "weight":  1,
                                         "quick":  false
+                                    },
+                                    {
+                                        "id":  71,
+                                        "text":  {
+                                                     "pt":  "O Estado deve ter o poder de monitorar as comunicações dos cidadãos se isso for necessário para prevenir crimes graves ou terrorismo.",
+                                                     "en":  "The State must have the power to monitor citizens\u0027 communications if necessary to prevent serious crimes or terrorism.",
+                                                     "es":  "El Estado debe tener el poder de vigilar las comunicaciones de los ciudadanos si es necesario para prevenir delitos graves o terrorismo."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  -1,
+                                        "quick":  true
+                                    },
+                                    {
+                                        "id":  72,
+                                        "text":  {
+                                                     "pt":  "A ordem, a hierarquia e a obediência à autoridade são as virtudes mais importantes a serem ensinadas às crianças.",
+                                                     "en":  "Order, hierarchy, and obedience to authority are the most important virtues to be taught to children.",
+                                                     "es":  "El orden, la jerarquía y la obediencia a la autoridad son las virtudes más importantes que se deben enseñar a los niños."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  -1,
+                                        "quick":  true
+                                    },
+                                    {
+                                        "id":  73,
+                                        "text":  {
+                                                     "pt":  "Um líder forte, capaz de pular a burocracia do Congresso, faz mais bem ao país do que as regras democráticas normais.",
+                                                     "en":  "A strong leader, capable of bypassing Congressional bureaucracy, does more good for the country than standard democratic rules.",
+                                                     "es":  "Un líder fuerte, capaz de evitar la burocracia del Congreso, hace más bien al país que las reglas democráticas normales."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  -1,
+                                        "quick":  true
+                                    },
+                                    {
+                                        "id":  74,
+                                        "text":  {
+                                                     "pt":  "A liberdade de expressão deve ser absoluta, e o Estado nunca deve censurar ideias, mesmo aquelas profundamente ofensivas ou preconceituosas.",
+                                                     "en":  "Freedom of speech must be absolute, and the State should never censor ideas, even deeply offensive or prejudiced ones.",
+                                                     "es":  "La libertad de expresión debe ser absoluta, y el Estado nunca debe censurar ideas, incluso las profundamente ofensivas o perjudiciales."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  1,
+                                        "quick":  true
+                                    },
+                                    {
+                                        "id":  75,
+                                        "text":  {
+                                                     "pt":  "O que adultos em pleno consentimento fazem em sua vida privada não deveria ser assunto da lei ou regulado pelo Estado.",
+                                                     "en":  "What consenting adults do in their private lives should not be a matter of law or regulated by the State.",
+                                                     "es":  "Lo que los adultos con pleno consentimiento hacen en su vida privada no debería ser asunto legal o estar regulado por el Estado."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  1,
+                                        "quick":  false
+                                    },
+                                    {
+                                        "id":  76,
+                                        "text":  {
+                                                     "pt":  "O serviço militar obrigatório e o recrutamento forçado são violações inaceitáveis da liberdade individual.",
+                                                     "en":  "Compulsory military service and conscription are unacceptable violations of individual freedom.",
+                                                     "es":  "El servicio militar obligatorio y el reclutamiento son violaciones inaceptables a la libertad individual."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  1,
+                                        "quick":  false
+                                    },
+                                    {
+                                        "id":  77,
+                                        "text":  {
+                                                     "pt":  "É mais importante manter a lei e a ordem em manifestações do que garantir o direito irrestrito de protestar fechando ruas.",
+                                                     "en":  "It is more important to maintain law and order during demonstrations than to guarantee the unrestricted right to protest by closing streets.",
+                                                     "es":  "Es más importante mantener la ley y el orden en las manifestaciones que garantizar el derecho irrestricto a protestar cerrando calles."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  -1,
+                                        "quick":  false
+                                    },
+                                    {
+                                        "id":  78,
+                                        "text":  {
+                                                     "pt":  "A lei deve ser rigorosamente obedecida em todos os casos, mesmo quando os indivíduos a consideram injusta ou moralmente errada.",
+                                                     "en":  "The law must be strictly obeyed in all cases, even when individuals consider it unjust or morally wrong.",
+                                                     "es":  "La ley debe ser cumplida estrictamente en todos los casos, incluso cuando las personas la consideren injusta o errónea moralmente."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  -1,
+                                        "quick":  false
+                                    },
+                                    {
+                                        "id":  79,
+                                        "text":  {
+                                                     "pt":  "A existência de mecanismos de censura e controle estatal é necessária para impedir a disseminação de mentiras perigosas e proteger a democracia.",
+                                                     "en":  "The existence of State censorship and control mechanisms is necessary to prevent the spread of dangerous lies and protect democracy.",
+                                                     "es":  "La existencia de mecanismos de censura y control estatal es necesaria para impedir la propagación de mentiras peligrosas y proteger la democracia."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  -1,
+                                        "quick":  true
+                                    },
+                                    {
+                                        "id":  80,
+                                        "text":  {
+                                                     "pt":  "A segurança nacional nunca deve justificar a tortura ou o tratamento degradante contra suspeitos ou inimigos do Estado.",
+                                                     "en":  "National security should never justify torture or degrading treatment against suspects or enemies of the State.",
+                                                     "es":  "La seguridad nacional nunca debe justificar la tortura o el trato degradante hacia sospechosos o enemigos del Estado."
+                                                 },
+                                        "axis":  "social",
+                                        "weight":  1,
+                                        "quick":  false
                                     }
                                 ],
-                      "Count":  70
+                      "Count":  80
                   },
     "worldQuestions":  {
                            "value":  [
@@ -1058,8 +1168,8 @@ window.APP_STATIC_DATA = {
                                          "id":  1,
                                          "name":  "Lula",
                                          "party":  "PT",
-                                         "economic":  -50,
-                                         "social":  -15,
+                                         "economic":  -30,
+                                         "social":  -10,
                                          "photo":  "data/candidates/avatars/lula.webp",
                                          "description":  "Trabalhismo desenvolvimentista e regulação estatal",
                                          "ideologyLabel":  "Social-democrata pragmático"
@@ -1068,8 +1178,8 @@ window.APP_STATIC_DATA = {
                                          "id":  2,
                                          "name":  "Flávio Bolsonaro",
                                          "party":  "PL",
-                                         "economic":  75,
-                                         "social":  -80,
+                                         "economic":  70,
+                                         "social":  -40,
                                          "photo":  "data/candidates/avatars/flavio.webp",
                                          "description":  "Direita conservadora e defesa de valores tradicionais com forte apelo punitivista",
                                          "ideologyLabel":  "Ultraliberal + punitivismo"
@@ -1078,8 +1188,8 @@ window.APP_STATIC_DATA = {
                                          "id":  3,
                                          "name":  "Renan Santos",
                                          "party":  "MISSÃO",
-                                         "economic":  48,
-                                         "social":  -85,
+                                         "economic":  30,
+                                         "social":  -80,
                                          "photo":  "data/candidates/avatars/renan.webp",
                                          "description":  "Direita nacional-autoritária com forte punitivismo e viés populista",
                                          "ideologyLabel":  "Direita nacional-autoritária"
@@ -1088,8 +1198,8 @@ window.APP_STATIC_DATA = {
                                          "id":  4,
                                          "name":  "Ronaldo Caiado",
                                          "party":  "PSD",
-                                         "economic":  50,
-                                         "social":  -78,
+                                         "economic":  70,
+                                         "social":  -50,
                                          "photo":  "data/candidates/avatars/caiado.webp",
                                          "description":  "Direita ruralista com foco total e rígido em segurança pública",
                                          "ideologyLabel":  "Direita rural + linha dura"
@@ -1108,8 +1218,8 @@ window.APP_STATIC_DATA = {
                                          "id":  11,
                                          "name":  "Samara Martins",
                                          "party":  "UP",
-                                         "economic":  -85,
-                                         "social":  -60,
+                                         "economic":  -100,
+                                         "social":  -80,
                                          "photo":  "data/candidates/avatars/samara.webp",
                                          "description":  "Socialismo revolucionário e poder popular com planejamento estatal",
                                          "ideologyLabel":  "Esquerda socialista revolucionária"
@@ -1148,8 +1258,8 @@ window.APP_STATIC_DATA = {
                                          "id":  15,
                                          "name":  "Cabo Daciolo",
                                          "party":  "Mobiliza",
-                                         "economic":  -40,
-                                         "social":  -40,
+                                         "economic":  0,
+                                         "social":  -60,
                                          "photo":  "data/candidates/avatars/daciolo.webp",
                                          "description":  "Nacionalismo de raízes religiosas com fortes traços de estado forte e militarismo",
                                          "ideologyLabel":  "Teocrata nacionalista"
@@ -1158,8 +1268,8 @@ window.APP_STATIC_DATA = {
                                          "id":  16,
                                          "name":  "Hertz Dias",
                                          "party":  "PSTU",
-                                         "economic":  -85,
-                                         "social":  -15,
+                                         "economic":  -100,
+                                         "social":  -40,
                                          "photo":  "data/candidates/avatars/hertz.webp",
                                          "description":  "Socialismo revolucionário trotskista focado na mobilização da classe operária",
                                          "ideologyLabel":  "Extrema-esquerda classista"
@@ -1252,6 +1362,24 @@ window.APP_STATIC_DATA = {
                                                                                 },
                                                                    "color":  "#6AB023",
                                                                    "logo":  "data/logos/uk-green-party.png"
+                                                               },
+                                                               {
+                                                                   "name":  "Reform UK",
+                                                                   "position":  {
+                                                                                    "economic":  5,
+                                                                                    "social":  -5
+                                                                                },
+                                                                   "color":  "#12B6CF",
+                                                                   "logo":  "data/logos/uk-reform-uk.png"
+                                                               },
+                                                               {
+                                                                   "name":  "Your Party",
+                                                                   "position":  {
+                                                                                    "economic":  -7,
+                                                                                    "social":  5
+                                                                                },
+                                                                   "color":  "#D50000",
+                                                                   "logo":  "data/logos/uk-your-party.png"
                                                                }
                                                            ]
                                            },
@@ -1973,6 +2101,87 @@ window.APP_STATIC_DATA = {
                                                                                 },
                                                                    "color":  "#EE0000",
                                                                    "logo":  "data/logos/netherlands-sp.png"
+                                                               },
+                                                               {
+                                                                   "name":  "SGP",
+                                                                   "position":  {
+                                                                                    "economic":  3,
+                                                                                    "social":  -7
+                                                                                },
+                                                                   "color":  "#E95D0F",
+                                                                   "logo":  "data/logos/netherlands-sgp.png"
+                                                               },
+                                                               {
+                                                                   "name":  "CDA",
+                                                                   "position":  {
+                                                                                    "economic":  2,
+                                                                                    "social":  -2
+                                                                                },
+                                                                   "color":  "#007C5E",
+                                                                   "logo":  "data/logos/netherlands-cda.png"
+                                                               },
+                                                               {
+                                                                   "name":  "ChristenUnie",
+                                                                   "position":  {
+                                                                                    "economic":  -1,
+                                                                                    "social":  -3
+                                                                                },
+                                                                   "color":  "#00AEEF",
+                                                                   "logo":  "data/logos/netherlands-cu.png"
+                                                               },
+                                                               {
+                                                                   "name":  "FvD",
+                                                                   "position":  {
+                                                                                    "economic":  4,
+                                                                                    "social":  -7
+                                                                                },
+                                                                   "color":  "#841818",
+                                                                   "logo":  "data/logos/netherlands-fvd.png"
+                                                               },
+                                                               {
+                                                                   "name":  "JA21",
+                                                                   "position":  {
+                                                                                    "economic":  4,
+                                                                                    "social":  -4
+                                                                                },
+                                                                   "color":  "#242B57",
+                                                                   "logo":  "data/logos/netherlands-ja21.png"
+                                                               },
+                                                               {
+                                                                   "name":  "BBB",
+                                                                   "position":  {
+                                                                                    "economic":  2,
+                                                                                    "social":  -4
+                                                                                },
+                                                                   "color":  "#92C01F",
+                                                                   "logo":  "data/logos/netherlands-bbb.png"
+                                                               },
+                                                               {
+                                                                   "name":  "DENK",
+                                                                   "position":  {
+                                                                                    "economic":  -3,
+                                                                                    "social":  -3
+                                                                                },
+                                                                   "color":  "#44C8F5",
+                                                                   "logo":  "data/logos/netherlands-denk.png"
+                                                               },
+                                                               {
+                                                                   "name":  "PvdD",
+                                                                   "position":  {
+                                                                                    "economic":  -5,
+                                                                                    "social":  6
+                                                                                },
+                                                                   "color":  "#006B2D",
+                                                                   "logo":  "data/logos/netherlands-pvdd.png"
+                                                               },
+                                                               {
+                                                                   "name":  "BIJ1",
+                                                                   "position":  {
+                                                                                    "economic":  -8,
+                                                                                    "social":  8
+                                                                                },
+                                                                   "color":  "#FFFF00",
+                                                                   "logo":  "data/logos/netherlands-bij1.png"
                                                                }
                                                            ]
                                            },
@@ -2289,6 +2498,15 @@ window.APP_STATIC_DATA = {
                                                                                 },
                                                                    "color":  "#00519E",
                                                                    "logo":  "data/logos/brazil-psdb.png"
+                                                               },
+                                                               {
+                                                                   "name":  "Missão",
+                                                                   "position":  {
+                                                                                    "economic":  3,
+                                                                                    "social":  -7
+                                                                                },
+                                                                   "color":  "#FACC15",
+                                                                   "logo":  "data/logos/brazil-missao.png"
                                                                }
                                                            ]
                                            },
@@ -2336,6 +2554,15 @@ window.APP_STATIC_DATA = {
                                                                                 },
                                                                    "color":  "#FF0000",
                                                                    "logo":  "data/logos/colombia-partido-liberal.png"
+                                                               },
+                                                               {
+                                                                   "name":  "Dignidad y Compromiso",
+                                                                   "position":  {
+                                                                                    "economic":  -1,
+                                                                                    "social":  1
+                                                                                },
+                                                                   "color":  "#00BFA5",
+                                                                   "logo":  "data/logos/colombia-dignidad-y-compromiso.png"
                                                                }
                                                            ]
                                            },
@@ -2798,7 +3025,7 @@ window.APP_STATIC_DATA = {
                                                             "en":  "Greece",
                                                             "es":  "Grecia"
                                                         },
-                                               "flag":  "🇬��",
+                                               "flag":  "🇬🇷",
                                                "parties":  [
                                                                {
                                                                    "name":  "New Democracy",

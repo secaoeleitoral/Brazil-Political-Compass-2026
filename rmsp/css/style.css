@@ -720,48 +720,50 @@ body {
     transition: background 0.3s ease;
 }
 
-.perf-slider {
-    -webkit-appearance: none;
-    width: 100%;
+/* Dual-range slider customizado */
+.dual-range-wrap {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.dual-thumb {
     position: absolute;
     top: 0;
-    left: 0;
-    height: 16px;
+    width: 24px;
+    height: 32px;
+    cursor: grab;
+    z-index: 4;
+    transform: translateX(-50%);
     background: transparent;
-    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     outline: none;
+    pointer-events: auto;
+}
+
+.dual-thumb-line {
+    width: 4px;
+    height: 24px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: width 0.15s ease;
     pointer-events: none;
 }
 
-.perf-slider-min { z-index: 3; }
-.perf-slider-max { z-index: 4; }
-
-.perf-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 24px;
-    width: 4px;
-    background: var(--text);
-    border-radius: 2px;
-    cursor: grab;
-    pointer-events: all;
+.dual-thumb:hover .dual-thumb-line,
+.dual-thumb:focus .dual-thumb-line {
+    width: 6px;
 }
 
-.perf-slider::-webkit-slider-thumb:active {
+.dual-thumb.dragging {
     cursor: grabbing;
+    z-index: 6;
 }
 
-.perf-slider::-moz-range-thumb {
-    height: 24px;
-    width: 4px;
-    background: var(--text);
-    border-radius: 2px;
-    border: none;
-    cursor: grab;
-    pointer-events: all;
-}
-
-.perf-slider::-moz-range-thumb:active {
-    cursor: grabbing;
+.dual-thumb.dragging .dual-thumb-line {
+    width: 6px;
 }
 
 .range-selection {
