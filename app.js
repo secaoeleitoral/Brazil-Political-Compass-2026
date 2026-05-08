@@ -6,6 +6,7 @@ var UI_COPY = {
         nav_compasso: "Compasso Político",
         nav_eleicoes: "Eleições",
         nav_apoie: "Apoie o Projeto",
+        nav_yt: "CONHEÇA NOSSO CANAL",
         qr_titulo: "Apoie o Projeto",
         qr_sub: "Escaneie o QR Code para contribuir via Pix",
         qr_fechar: "Fechar",
@@ -121,6 +122,7 @@ var UI_COPY = {
         nav_compasso: "Political Compass",
         nav_eleicoes: "Elections",
         nav_apoie: "Support the Project",
+        nav_yt: "VISIT OUR CHANNEL",
         qr_titulo: "Support the Project",
         qr_sub: "Scan the QR code to contribute via Pix",
         qr_fechar: "Close",
@@ -229,6 +231,7 @@ var UI_COPY = {
         nav_compasso: "Compás Político",
         nav_eleicoes: "Elecciones",
         nav_apoie: "Apoya el Proyecto",
+        nav_yt: "VISITA NUESTRO CANAL",
         qr_titulo: "Apoya el Proyecto",
         qr_sub: "Escanea el código QR para contribuir vía Pix",
         qr_fechar: "Cerrar",
@@ -2489,7 +2492,7 @@ var RMSP_URL = "rmsp/";
 function abrirRMSP() {
     var iframe = document.getElementById("rmsp-iframe");
     if (iframe && !iframe.getAttribute("src")) {
-        iframe.setAttribute("src", RMSP_URL);
+        iframe.setAttribute("src", RMSP_URL + "?v=2");
     }
     ir("t-rmsp");
 }
