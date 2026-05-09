@@ -2609,7 +2609,7 @@ async function carregarDadosEleicao(ano, cargo) {
                             "<div class='kt-row'><span class='kt-label'>Votos Nominais</span><span class='kt-val'>" + (props.total != null ? props.total : "") + "</span></div>";
                     } else {
                         tooltipHtml +=
-                            "<div class='kt-row'><span class='kt-label'>Jânio Quadros (UDN)</span><span class='kt-val'>" + (props.janio != null ? props.janio : "") + "</span></div>" +
+                            "<div class='kt-row'><span class='kt-label'>Jânio Quadros (PTN)</span><span class='kt-val'>" + (props.janio != null ? props.janio : "") + "</span></div>" +
                             "<div class='kt-row'><span class='kt-label'>Mal. Lott (PSD)</span><span class='kt-val'>" + (props.lott != null ? props.lott : "") + "</span></div>" +
                             "<div class='kt-row'><span class='kt-label'>Adhemar de Barros (PSP)</span><span class='kt-val'>" + (props.adhemar != null ? props.adhemar : "") + "</span></div>" +
                             "<div class='kt-row'><span class='kt-label'>Jânio %</span><span class='kt-val'>" + (props.janio_pct != null ? props.janio_pct : "") + "</span></div>" +
